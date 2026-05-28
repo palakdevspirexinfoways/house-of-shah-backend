@@ -131,6 +131,104 @@ router.get('/', protect, async (req, res) => {
 });
 
 /**
+ * @desc    Get user registration analytics aggregated by date ranges
+ * @route   GET /api/v1/users/analytics/registrations
+ * @access  Protected (Requires Administrator JWT Token)
+ */
+router.get('/analytics/registrations', protect, async (req, res) => {
+  try {
+    const { range } = req.query; // '7D' | '30D' | 'AllTime'
+    const now = new Date();
+
+    if (range === '7D') {
+      const data = [];
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+
+        const endD = new Date(d);
+        endD.setDate(d.getDate() + 1);
+
+        const count = await User.countDocuments({
+          createdAt: { $gte: d, $lt: endD }
+        });
+
+        const dayName = days[d.getDay()];
+        const dateString = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+        data.push({
+          label: dayName,
+          value: count,
+          date: dateString,
+          detail: `${count} premium member(s) registered`
+        });
+      }
+      return res.status(200).json({ success: true, data });
+    }
+
+    if (range === '30D') {
+      const data = [];
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+
+        const endD = new Date(d);
+        endD.setDate(d.getDate() + 1);
+
+        const count = await User.countDocuments({
+          createdAt: { $gte: d, $lt: endD }
+        });
+
+        const dateString = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+        data.push({
+          label: `${d.getDate()}`,
+          value: count,
+          date: dateString,
+          detail: `${count} premium client(s) registered`
+        });
+      }
+      return res.status(200).json({ success: true, data });
+    }
+
+    // Default: 'AllTime' or yearly trend (12 months)
+    const data = [];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(now.getMonth() - i);
+      d.setDate(1);
+      d.setHours(0, 0, 0, 0);
+
+      const endD = new Date(d);
+      endD.setMonth(d.getMonth() + 1);
+
+      const count = await User.countDocuments({
+        createdAt: { $gte: d, $lt: endD }
+      });
+
+      const monthName = months[d.getMonth()];
+      const yearName = d.getFullYear();
+
+      data.push({
+        label: monthName,
+        value: count,
+        date: `${monthName} ${yearName}`,
+        detail: `${count} premium client(s) registered`
+      });
+    }
+    return res.status(200).json({ success: true, data });
+
+  } catch (error) {
+    console.error(`[User Analytics Route Error] ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+/**
  * @desc    Update a registered user's profile details
  * @route   PUT /api/v1/users/:id
  * @access  Protected (Requires Administrator JWT Token)
