@@ -22,6 +22,11 @@ const productSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    dynamicText: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     weight: {
       type: String,
       trim: true,
