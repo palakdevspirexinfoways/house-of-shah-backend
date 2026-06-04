@@ -6,6 +6,11 @@ const slideSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    page: {
+      type: String,
+      enum: ['home', 'about', 'product', 'gallery', 'contact', 'beyond'],
+      default: 'home',
+    },
     title: {
       type: String,
       required: [true, 'Please provide a title'],

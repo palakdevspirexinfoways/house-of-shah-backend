@@ -101,10 +101,31 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Reorder products
+ * @route   PUT /api/v1/products/reorder
+ * @access  Protected
+ */
+const reorderProducts = async (req, res) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!orderedIds || !Array.isArray(orderedIds)) {
+      return res.status(400).json({ success: false, message: 'Invalid orderedIds array' });
+    }
+
+    await productService.reorderProducts(orderedIds);
+    return res.status(200).json({ success: true, message: 'Products reordered successfully' });
+  } catch (error) {
+    console.error(`[Product Controller reorderProducts Error] ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
   getProducts,
   getProduct,
   addProduct,
   editProduct,
   deleteProduct,
+  reorderProducts,
 };

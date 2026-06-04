@@ -19,35 +19,40 @@ const diskStorage = multer.diskStorage({
 // Storage engine configuration for memory (Cloudinary streams)
 const memoryStorage = multer.memoryStorage();
 
-// File filter to accept images only
+// File filter to accept images and videos
 const fileFilter = (req, file, cb) => {
-  const allowedFileTypes = /jpeg|jpg|png|webp|gif/;
+  const allowedFileTypes = /jpeg|jpg|png|webp|gif|mp4|webm|avi|mov|mkv/;
   const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedFileTypes.test(file.mimetype);
 
   if (extname && mimetype) {
     return cb(null, true);
   } else {
-    cb(new Error('Only image files (jpeg, jpg, png, webp, gif) are allowed!'));
+    cb(new Error('Only image and video files are allowed!'));
   }
 };
 
 // Check if Cloudinary configuration is active
 const isCloudinaryConfigured = () => {
-  return !!(
+  const isConfigured = !!(
     process.env.CLOUDINARY_CLOUD_NAME &&
     process.env.CLOUDINARY_CLOUD_NAME !== 'YOUR_CLOUD_NAME_HERE' &&
     process.env.CLOUDINARY_API_KEY &&
     process.env.CLOUDINARY_API_KEY !== 'YOUR_API_KEY_HERE' &&
     process.env.CLOUDINARY_API_SECRET
   );
+  console.log('[UploadRoutes] isCloudinaryConfigured evaluated:', isConfigured);
+  console.log('[UploadRoutes] CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME);
+  console.log('[UploadRoutes] CLOUDINARY_API_KEY:', process.env.CLOUDINARY_API_KEY ? '(set)' : '(not set)');
+  console.log('[UploadRoutes] CLOUDINARY_API_SECRET:', process.env.CLOUDINARY_API_SECRET ? '(set)' : '(not set)');
+  return isConfigured;
 };
 
-// Configure Multer dynamically based on Cloudinary config state
+// Configure Multer to always use memory storage so buffer is available
 const upload = multer({
-  storage: isCloudinaryConfigured() ? memoryStorage : diskStorage,
+  storage: memoryStorage,
   fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Max file size 5MB (expanded for Cloudinary)
+  limits: { fileSize: 99 * 1024 * 1024 }, // Max file size 99MB
 });
 
 /**
@@ -59,7 +64,7 @@ router.post('/', protect, (req, res, next) => {
   upload.single('image')(req, res, async (err) => {
     if (err) {
       if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ success: false, message: 'File size exceeds the 5MB limit.' });
+        return res.status(400).json({ success: false, message: 'File size exceeds the 99MB limit.' });
       }
       return res.status(400).json({ success: false, message: err.message });
     }
@@ -87,7 +92,15 @@ router.post('/', protect, (req, res, next) => {
 
       // 2. Fall back to local file storage if Cloudinary is not configured
       console.log('[Upload Endpoint] Cloudinary not configured or contains placeholder keys. Falling back to local disk storage...');
-      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+      
+      const fs = require('fs');
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const filename = req.file.fieldname + '-' + uniqueSuffix + path.extname(req.file.originalname);
+      const filepath = path.join(__dirname, '../uploads', filename);
+      
+      fs.writeFileSync(filepath, req.file.buffer);
+
+      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
       return res.status(200).json({
         success: true,
         message: 'Image uploaded to local disk successfully',

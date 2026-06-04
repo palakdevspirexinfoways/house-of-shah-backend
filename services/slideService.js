@@ -1,7 +1,7 @@
 const Slide = require('../models/Slide');
 
-const getAllSlides = async () => {
-  return await Slide.find({});
+const getAllSlides = async (query = {}) => {
+  return await Slide.find(query);
 };
 
 const getSlideById = async (id) => {

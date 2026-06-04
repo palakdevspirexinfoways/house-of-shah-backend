@@ -8,6 +8,7 @@ router.get('/', productController.getProducts);
 router.get('/:id', productController.getProduct);
 
 // Protected administrative CRUD actions
+router.put('/reorder', protect, productController.reorderProducts);
 router.post('/', protect, productController.addProduct);
 router.put('/:id', protect, productController.editProduct);
 router.delete('/:id', protect, productController.deleteProduct);

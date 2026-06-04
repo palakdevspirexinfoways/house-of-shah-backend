@@ -8,7 +8,11 @@ const { deleteLocalImage } = require('../utils/fileCleaner');
  */
 const getSlides = async (req, res) => {
   try {
-    const slides = await slideService.getAllSlides();
+    const filter = {};
+    if (req.query.page) {
+      filter.page = req.query.page;
+    }
+    const slides = await slideService.getAllSlides(filter);
     return res.status(200).json({ success: true, count: slides.length, data: slides });
   } catch (error) {
     console.error(`[Slide Controller getSlides Error] ${error.message}`);

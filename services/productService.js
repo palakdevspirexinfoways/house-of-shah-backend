@@ -1,7 +1,7 @@
 const Product = require('../models/Product');
 
 const getAllProducts = async () => {
-  return await Product.find({});
+  return await Product.find({}).sort({ order: 1, createdAt: -1 });
 };
 
 const getProductById = async (id) => {
@@ -21,6 +21,18 @@ const updateProduct = async (id, productData) => {
 
 const deleteProduct = async (id) => {
   return await Product.findByIdAndDelete(id);
+};
+
+const reorderProducts = async (orderedIds) => {
+  const bulkOps = orderedIds.map((id, index) => ({
+    updateOne: {
+      filter: { _id: id },
+      update: { $set: { order: index } }
+    }
+  }));
+  if (bulkOps.length > 0) {
+    await Product.bulkWrite(bulkOps);
+  }
 };
 
 /**
@@ -48,5 +60,6 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
+  reorderProducts,
   seedProducts,
 };

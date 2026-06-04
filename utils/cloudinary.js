@@ -14,6 +14,7 @@ cloudinary.config({
  * @returns {Promise<object>} Cloudinary upload response object
  */
 const uploadToCloudinary = (fileBuffer, folder = 'house_of_shah') => {
+  console.log('[Cloudinary] Starting uploadToCloudinary. Buffer length:', fileBuffer ? fileBuffer.length : 'undefined');
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
@@ -22,11 +23,19 @@ const uploadToCloudinary = (fileBuffer, folder = 'house_of_shah') => {
       },
       (error, result) => {
         if (error) {
+          console.error('[Cloudinary] Upload Error:', error);
           return reject(error);
         }
+        console.log('[Cloudinary] Upload Success:', result.secure_url);
         resolve(result);
       }
     );
+    
+    if (!fileBuffer) {
+      console.error('[Cloudinary] fileBuffer is undefined or null');
+      return reject(new Error('File buffer is missing'));
+    }
+    
     uploadStream.end(fileBuffer);
   });
 };
