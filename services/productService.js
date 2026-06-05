@@ -1,7 +1,50 @@
 const Product = require('../models/Product');
 
-const getAllProducts = async () => {
-  return await Product.find({}).sort({ order: 1, createdAt: -1 });
+const getAllProducts = async (query = {}) => {
+  let filter = {};
+
+  if (query.search) {
+    const searchRegex = new RegExp(query.search, 'i');
+    filter.$or = [
+      { title: searchRegex },
+      { collection: searchRegex },
+      { category: searchRegex }
+    ];
+  }
+
+  if (query.category && query.category !== 'All') {
+    filter.category = query.category;
+  }
+
+  if (query.collection && query.collection !== 'All') {
+    filter.collection = query.collection;
+  }
+
+  const page = parseInt(query.page) || 1;
+  const limit = query.limit ? parseInt(query.limit) : 0;
+  
+  const sortOptions = { order: 1, createdAt: -1 };
+
+  if (limit === 0) {
+    const products = await Product.find(filter).sort(sortOptions);
+    return { products, totalCount: products.length, totalPages: 1, currentPage: 1 };
+  }
+
+  const skip = (page - 1) * limit;
+  const products = await Product.find(filter).sort(sortOptions).skip(skip).limit(limit);
+  const totalCount = await Product.countDocuments(filter);
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return { products, totalCount, totalPages, currentPage: page };
+};
+
+const getProductsMetadata = async () => {
+  const categories = await Product.distinct('category');
+  const collections = await Product.distinct('collection');
+  return { 
+    categories: categories.filter(Boolean), 
+    collections: collections.filter(Boolean) 
+  };
 };
 
 const getProductById = async (id) => {
@@ -56,6 +99,7 @@ const seedProducts = async () => {
 
 module.exports = {
   getAllProducts,
+  getProductsMetadata,
   getProductById,
   createProduct,
   updateProduct,

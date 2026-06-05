@@ -8,10 +8,32 @@ const { deleteLocalImage } = require('../utils/fileCleaner');
  */
 const getProducts = async (req, res) => {
   try {
-    const products = await productService.getAllProducts();
-    return res.status(200).json({ success: true, count: products.length, data: products });
+    const result = await productService.getAllProducts(req.query);
+    return res.status(200).json({ 
+      success: true, 
+      count: result.products.length, 
+      totalCount: result.totalCount,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
+      data: result.products 
+    });
   } catch (error) {
     console.error(`[Product Controller getProducts Error] ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+/**
+ * @desc    Get product metadata (categories & collections)
+ * @route   GET /api/v1/products/metadata
+ * @access  Public
+ */
+const getProductsMetadata = async (req, res) => {
+  try {
+    const metadata = await productService.getProductsMetadata();
+    return res.status(200).json({ success: true, data: metadata });
+  } catch (error) {
+    console.error(`[Product Controller getProductsMetadata Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
@@ -123,6 +145,7 @@ const reorderProducts = async (req, res) => {
 
 module.exports = {
   getProducts,
+  getProductsMetadata,
   getProduct,
   addProduct,
   editProduct,
