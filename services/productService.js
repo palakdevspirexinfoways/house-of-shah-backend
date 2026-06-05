@@ -12,6 +12,10 @@ const getAllProducts = async (query = {}) => {
     ];
   }
 
+  if (query.homepageHighlight) {
+    filter.homepageHighlight = query.homepageHighlight;
+  }
+
   if (query.category && query.category !== 'All') {
     filter.category = query.category;
   }
@@ -35,7 +39,19 @@ const getAllProducts = async (query = {}) => {
   const totalCount = await Product.countDocuments(filter);
   const totalPages = Math.ceil(totalCount / limit);
 
-  return { products, totalCount, totalPages, currentPage: page };
+  const allCategories = await Product.distinct('category');
+  const allCollections = await Product.distinct('collection');
+
+  return { 
+    products, 
+    totalCount, 
+    totalPages, 
+    currentPage: page,
+    metadata: {
+      categories: allCategories.filter(Boolean),
+      collections: allCollections.filter(Boolean)
+    }
+  };
 };
 
 const getProductsMetadata = async () => {
