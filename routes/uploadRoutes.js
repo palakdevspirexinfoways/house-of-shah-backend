@@ -3,7 +3,6 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const { protect } = require('../middleware/authMiddleware');
-const { uploadToCloudinary } = require('../utils/cloudinary');
 
 // Storage engine configuration for local disk fallback
 const diskStorage = multer.diskStorage({
@@ -15,9 +14,6 @@ const diskStorage = multer.diskStorage({
     cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   },
 });
-
-// Storage engine configuration for memory (Cloudinary streams)
-const memoryStorage = multer.memoryStorage();
 
 // File filter to accept images and videos
 const fileFilter = (req, file, cb) => {
@@ -32,36 +28,20 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Check if Cloudinary configuration is active
-const isCloudinaryConfigured = () => {
-  const isConfigured = !!(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_CLOUD_NAME !== 'YOUR_CLOUD_NAME_HERE' &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_KEY !== 'YOUR_API_KEY_HERE' &&
-    process.env.CLOUDINARY_API_SECRET
-  );
-  console.log('[UploadRoutes] isCloudinaryConfigured evaluated:', isConfigured);
-  console.log('[UploadRoutes] CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME);
-  console.log('[UploadRoutes] CLOUDINARY_API_KEY:', process.env.CLOUDINARY_API_KEY ? '(set)' : '(not set)');
-  console.log('[UploadRoutes] CLOUDINARY_API_SECRET:', process.env.CLOUDINARY_API_SECRET ? '(set)' : '(not set)');
-  return isConfigured;
-};
-
-// Configure Multer to always use memory storage so buffer is available
+// Configure Multer to use disk storage
 const upload = multer({
-  storage: memoryStorage,
+  storage: diskStorage,
   fileFilter: fileFilter,
   limits: { fileSize: 99 * 1024 * 1024 }, // Max file size 99MB
 });
 
 /**
- * @desc    Upload an image file securely (Handles Cloudinary and local disk fallback)
+ * @desc    Upload an image file securely to local disk
  * @route   POST /api/v1/upload
  * @access  Protected (Requires JWT Admin Token)
  */
-router.post('/', protect, (req, res, next) => {
-  upload.single('image')(req, res, async (err) => {
+router.post('/', protect, (req, res) => {
+  upload.single('image')(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ success: false, message: 'File size exceeds the 99MB limit.' });
@@ -74,33 +54,7 @@ router.post('/', protect, (req, res, next) => {
         return res.status(400).json({ success: false, message: 'Please upload a file' });
       }
 
-      // 1. Upload to Cloudinary if configured
-      if (isCloudinaryConfigured()) {
-        console.log('[Upload Endpoint] Cloudinary config detected. Commencing memory stream upload...');
-        try {
-          const result = await uploadToCloudinary(req.file.buffer, 'house_of_shah');
-          return res.status(200).json({
-            success: true,
-            message: 'Image uploaded to Cloudinary successfully',
-            imageUrl: result.secure_url,
-          });
-        } catch (cloudinaryErr) {
-          console.error('[Upload Endpoint Cloudinary Error]', cloudinaryErr.message);
-          return res.status(500).json({ success: false, message: 'Cloudinary upload failed: ' + cloudinaryErr.message });
-        }
-      }
-
-      // 2. Fall back to local file storage if Cloudinary is not configured
-      console.log('[Upload Endpoint] Cloudinary not configured or contains placeholder keys. Falling back to local disk storage...');
-      
-      const fs = require('fs');
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const filename = req.file.fieldname + '-' + uniqueSuffix + path.extname(req.file.originalname);
-      const filepath = path.join(__dirname, '../uploads', filename);
-      
-      fs.writeFileSync(filepath, req.file.buffer);
-
-      const fileUrl = `/uploads/${filename}`;
+      const fileUrl = `/uploads/${req.file.filename}`;
       return res.status(200).json({
         success: true,
         message: 'Image uploaded to local disk successfully',
