@@ -26,13 +26,13 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Serve uploads folder statically
-app.use('/uploads', express.static(uploadsDir));
-
 // Standard Request Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve uploads folder statically
+app.use('/uploads', express.static(uploadsDir));
 
 // Log request information in development mode
 if (process.env.NODE_ENV === 'development') {

@@ -13,7 +13,6 @@ const slideSchema = new mongoose.Schema(
     },
     title: {
       type: String,
-      required: [true, 'Please provide a title'],
       trim: true,
     },
     desc: {

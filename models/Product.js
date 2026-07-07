@@ -9,7 +9,8 @@ const productSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      required: [true, 'Please provide a category'],
+      required: false,
+      default: '',
       trim: true,
     },
     collection: {

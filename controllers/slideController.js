@@ -1,5 +1,6 @@
 const slideService = require('../services/slideService');
 const { deleteLocalImage } = require('../utils/fileCleaner');
+const { formatImageUrl } = require('../utils/imageUrlFormatter');
 
 /**
  * @desc    Get all hero slides
@@ -13,7 +14,12 @@ const getSlides = async (req, res) => {
       filter.page = req.query.page;
     }
     const slides = await slideService.getAllSlides(filter);
-    return res.status(200).json({ success: true, count: slides.length, data: slides });
+    const formatted = slides.map(slide => {
+      const obj = slide.toJSON();
+      obj.image = formatImageUrl(obj.image, req);
+      return obj;
+    });
+    return res.status(200).json({ success: true, count: formatted.length, data: formatted });
   } catch (error) {
     console.error(`[Slide Controller getSlides Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -31,7 +37,9 @@ const getSlide = async (req, res) => {
     if (!slide) {
       return res.status(404).json({ success: false, message: 'Hero slide not found' });
     }
-    return res.status(200).json({ success: true, data: slide });
+    const obj = slide.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+    return res.status(200).json({ success: true, data: obj });
   } catch (error) {
     console.error(`[Slide Controller getSlide Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -51,7 +59,9 @@ const addSlide = async (req, res) => {
     }
 
     const slide = await slideService.createSlide(req.body);
-    return res.status(201).json({ success: true, message: 'Hero slide added successfully', data: slide });
+    const obj = slide.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+    return res.status(201).json({ success: true, message: 'Hero slide added successfully', data: obj });
   } catch (error) {
     console.error(`[Slide Controller addSlide Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -76,7 +86,9 @@ const editSlide = async (req, res) => {
     }
 
     const slide = await slideService.updateSlide(req.params.id, req.body);
-    return res.status(200).json({ success: true, message: 'Hero slide updated successfully', data: slide });
+    const obj = slide.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+    return res.status(200).json({ success: true, message: 'Hero slide updated successfully', data: obj });
   } catch (error) {
     console.error(`[Slide Controller editSlide Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });

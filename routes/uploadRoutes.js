@@ -100,7 +100,7 @@ router.post('/', protect, (req, res, next) => {
       
       fs.writeFileSync(filepath, req.file.buffer);
 
-      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+      const fileUrl = `/uploads/${filename}`;
       return res.status(200).json({
         success: true,
         message: 'Image uploaded to local disk successfully',

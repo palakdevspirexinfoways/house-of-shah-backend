@@ -1,5 +1,6 @@
 const galleryService = require('../services/galleryService');
 const { deleteLocalImage } = require('../utils/fileCleaner');
+const { formatImageUrl } = require('../utils/imageUrlFormatter');
 
 /**
  * @desc    Get all gallery items
@@ -9,7 +10,12 @@ const { deleteLocalImage } = require('../utils/fileCleaner');
 const getGalleryItems = async (req, res) => {
   try {
     const galleryItems = await galleryService.getAllGalleryItems();
-    return res.status(200).json({ success: true, count: galleryItems.length, data: galleryItems });
+    const formatted = galleryItems.map(item => {
+      const obj = item.toJSON();
+      obj.image = formatImageUrl(obj.image, req);
+      return obj;
+    });
+    return res.status(200).json({ success: true, count: formatted.length, data: formatted });
   } catch (error) {
     console.error(`[Gallery Controller getGalleryItems Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -27,7 +33,9 @@ const getGalleryItem = async (req, res) => {
     if (!item) {
       return res.status(404).json({ success: false, message: 'Gallery item not found' });
     }
-    return res.status(200).json({ success: true, data: item });
+    const obj = item.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+    return res.status(200).json({ success: true, data: obj });
   } catch (error) {
     console.error(`[Gallery Controller getGalleryItem Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -47,7 +55,9 @@ const addGalleryItem = async (req, res) => {
     }
 
     const item = await galleryService.createGalleryItem(req.body);
-    return res.status(201).json({ success: true, message: 'Gallery item added successfully', data: item });
+    const obj = item.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+    return res.status(201).json({ success: true, message: 'Gallery item added successfully', data: obj });
   } catch (error) {
     console.error(`[Gallery Controller addGalleryItem Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -72,7 +82,9 @@ const editGalleryItem = async (req, res) => {
     }
 
     const item = await galleryService.updateGalleryItem(req.params.id, req.body);
-    return res.status(200).json({ success: true, message: 'Gallery details updated successfully', data: item });
+    const obj = item.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+    return res.status(200).json({ success: true, message: 'Gallery details updated successfully', data: obj });
   } catch (error) {
     console.error(`[Gallery Controller editGalleryItem Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });

@@ -1,5 +1,6 @@
 const productService = require('../services/productService');
 const { deleteLocalImage } = require('../utils/fileCleaner');
+const { formatImageUrl } = require('../utils/imageUrlFormatter');
 
 /**
  * @desc    Get all signature products
@@ -9,13 +10,19 @@ const { deleteLocalImage } = require('../utils/fileCleaner');
 const getProducts = async (req, res) => {
   try {
     const result = await productService.getAllProducts(req.query);
+    const formattedProducts = result.products.map(p => {
+      const obj = p.toJSON();
+      obj.image = formatImageUrl(obj.image, req);
+      return obj;
+    });
+
     return res.status(200).json({ 
       success: true, 
-      count: result.products.length, 
+      count: formattedProducts.length, 
       totalCount: result.totalCount,
       totalPages: result.totalPages,
       currentPage: result.currentPage,
-      data: result.products 
+      data: formattedProducts 
     });
   } catch (error) {
     console.error(`[Product Controller getProducts Error] ${error.message}`);
@@ -49,7 +56,9 @@ const getProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product item not found' });
     }
-    return res.status(200).json({ success: true, data: product });
+    const obj = product.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+    return res.status(200).json({ success: true, data: obj });
   } catch (error) {
     console.error(`[Product Controller getProduct Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -63,13 +72,18 @@ const getProduct = async (req, res) => {
  */
 const addProduct = async (req, res) => {
   try {
-    const { title, category, image } = req.body;
-    if (!title || !category || !image) {
-      return res.status(400).json({ success: false, message: 'Title, category, and image URL are required' });
+    const { title, category, image, collection } = req.body;
+    if (!title || !image) {
+      return res.status(400).json({ success: false, message: 'Title and image URL are required' });
+    }
+    if (!collection && !category) {
+      return res.status(400).json({ success: false, message: 'Category is required if no collection is selected' });
     }
 
     const product = await productService.createProduct(req.body);
-    return res.status(201).json({ success: true, message: 'Product added successfully', data: product });
+    const obj = product.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+    return res.status(201).json({ success: true, message: 'Product added successfully', data: obj });
   } catch (error) {
     console.error(`[Product Controller addProduct Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -94,7 +108,9 @@ const editProduct = async (req, res) => {
     }
 
     const product = await productService.updateProduct(req.params.id, req.body);
-    return res.status(200).json({ success: true, message: 'Product details updated successfully', data: product });
+    const obj = product.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+    return res.status(200).json({ success: true, message: 'Product details updated successfully', data: obj });
   } catch (error) {
     console.error(`[Product Controller editProduct Error] ${error.message}`);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });

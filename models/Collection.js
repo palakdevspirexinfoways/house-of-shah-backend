@@ -1,18 +1,16 @@
 const mongoose = require('mongoose');
 
-const gallerySchema = new mongoose.Schema(
+const collectionSchema = new mongoose.Schema(
   {
-    title: {
+    name: {
       type: String,
+      required: [true, 'Please provide a collection name'],
       trim: true,
-    },
-    category: {
-      type: String,
-      trim: true,
+      unique: true,
     },
     image: {
       type: String,
-      required: [true, 'Please provide an image URL'],
+      required: [true, 'Please provide a collection image'],
       trim: true,
     },
   },
@@ -30,4 +28,4 @@ const gallerySchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('Gallery', gallerySchema);
+module.exports = mongoose.model('Collection', collectionSchema);
