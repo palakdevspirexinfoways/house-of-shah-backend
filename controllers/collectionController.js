@@ -48,7 +48,7 @@ exports.getCollections = async (req, res) => {
 // @access  Private
 exports.createCollection = async (req, res) => {
   try {
-    const { name, image } = req.body;
+    const { name, image, description } = req.body;
 
     if (!name || !image) {
       return res.status(400).json({
@@ -57,7 +57,7 @@ exports.createCollection = async (req, res) => {
       });
     }
 
-    const collection = await Collection.create({ name, image });
+    const collection = await Collection.create({ name, image, description });
     const obj = collection.toJSON();
     obj.image = formatImageUrl(obj.image, req);
 
@@ -104,6 +104,50 @@ exports.deleteCollection = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server Error: Could not delete collection',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Update a collection
+// @route   PUT /api/collections/:id
+// @access  Private
+exports.updateCollection = async (req, res) => {
+  try {
+    const { name, image, description } = req.body;
+
+    let collection = await Collection.findById(req.params.id);
+
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        message: `Collection not found with id of ${req.params.id}`,
+      });
+    }
+
+    collection = await Collection.findByIdAndUpdate(
+      req.params.id,
+      { name, image, description },
+      { new: true, runValidators: true }
+    );
+
+    const obj = collection.toJSON();
+    obj.image = formatImageUrl(obj.image, req);
+
+    res.status(200).json({
+      success: true,
+      data: obj,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Collection with this name already exists',
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: 'Server Error: Could not update collection',
       error: error.message,
     });
   }

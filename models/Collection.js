@@ -8,6 +8,10 @@ const collectionSchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
+    description: {
+      type: String,
+      trim: true,
+    },
     image: {
       type: String,
       required: [true, 'Please provide a collection image'],

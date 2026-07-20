@@ -55,10 +55,12 @@ router.post('/', protect, (req, res) => {
       }
 
       const fileUrl = `/uploads/${req.file.filename}`;
+      const { formatImageUrl } = require('../utils/imageUrlFormatter');
+      const absoluteUrl = formatImageUrl(fileUrl, req);
       return res.status(200).json({
         success: true,
         message: 'Image uploaded to local disk successfully',
-        imageUrl: fileUrl,
+        imageUrl: absoluteUrl,
       });
 
     } catch (error) {

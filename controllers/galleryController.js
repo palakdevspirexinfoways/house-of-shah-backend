@@ -50,8 +50,8 @@ const getGalleryItem = async (req, res) => {
 const addGalleryItem = async (req, res) => {
   try {
     const { title, category, image } = req.body;
-    if (!title || !category || !image) {
-      return res.status(400).json({ success: false, message: 'Title, category issue, and image URL are required' });
+    if (!image) {
+      return res.status(400).json({ success: false, message: 'Image URL is required' });
     }
 
     const item = await galleryService.createGalleryItem(req.body);

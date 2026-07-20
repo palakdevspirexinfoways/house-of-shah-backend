@@ -2,6 +2,7 @@ const express = require('express');
 const {
   getCollections,
   createCollection,
+  updateCollection,
   deleteCollection,
 } = require('../controllers/collectionController');
 
@@ -14,6 +15,7 @@ router.route('/')
   .post(protect, createCollection);
 
 router.route('/:id')
+  .put(protect, updateCollection)
   .delete(protect, deleteCollection);
 
 module.exports = router;
