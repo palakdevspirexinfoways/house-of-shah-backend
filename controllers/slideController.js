@@ -53,9 +53,9 @@ const getSlide = async (req, res) => {
  */
 const addSlide = async (req, res) => {
   try {
-    const { title, image } = req.body;
-    if (!title || !image) {
-      return res.status(400).json({ success: false, message: 'Title and image URL are required' });
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ success: false, message: 'Image URL is required' });
     }
 
     const slide = await slideService.createSlide(req.body);
